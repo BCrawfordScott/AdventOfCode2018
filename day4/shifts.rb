@@ -3,7 +3,7 @@ require 'byebug'
 
 class Guard
 
-  attr_reader :sleeptime, :id
+  attr_reader :sleeptime, :id, :sleep_schedule
 
   def initialize(id)
     @id = id  
@@ -96,5 +96,28 @@ class SleepLedger
     sleepiest = choose_guard
     sleepiest.sleepiest_min * sleepiest.id
   end
+
+  def guards 
+    ledger.values
+  end
+
+  def most_regular_sleeper 
+    record_sleep 
+    sleepiest_time = nil
+    guards.each do |guard|
+      min = guard.sleep_schedule.max_by { |k, v| v }
+      
+      if sleepiest_time.nil? || sleepiest_time[1][1] < min[1]
+        sleepiest_time = [guard.id, min]
+      end 
+    end
+    
+    sleepiest_time[0] * sleepiest_time[1][0]
+  end
   
 end
+
+s1 = SleepLedger.new
+p s1.sleepy_multiply
+s2 = SleepLedger.new
+p s2.most_regular_sleeper
