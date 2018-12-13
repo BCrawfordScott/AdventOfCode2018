@@ -1,9 +1,32 @@
+require 'byebug'
+
 class Polymer
 
-  attr_reader :polymer
+  attr_reader :polymer, :radical
 
-  def initialize
+  def self.radical_polymers 
+    lower = ('a'..'z').to_a 
+    lower.map do |l|
+      new(l)
+    end 
+  end
+
+  def self.shortest_radical(data)
+    data.min_by { |k, v| v }
+  end
+
+  def self.analyze_radicals
+    data = Hash.new
+    radical_polymers.each do |poly|
+      data[poly.radical] = poly.optimized_analysis
+    end
+
+    shortest_radical(data)[1]
+  end
+
+  def initialize(radical = '')
     @polymer = File.readlines('./input.txt').map(&:chomp)[0].split('')
+    @radical = radical
   end
 
   def reaction(i)
@@ -33,6 +56,18 @@ class Polymer
 
   def analyzed_length 
     analyzed_polymer.length
+  end
+
+  def optimized_analysis
+    remove_radicals
+    analyzed_length
+  end
+  
+  def remove_radicals
+  
+    @polymer.delete(@radical)
+    @polymer.delete(@radical.upcase)
+  
   end
 
 end
