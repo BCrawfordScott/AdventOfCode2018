@@ -64,10 +64,8 @@ class Polymer
   end
   
   def remove_radicals
-  
     @polymer.delete(@radical)
     @polymer.delete(@radical.upcase)
-  
   end
 
 end
