@@ -11,6 +11,14 @@ class NavNode
     @meta_data = []
   end
 
+  def children?
+    !children.empty?
+  end
+
+  def meta_value
+    meta_data.map(&:to_i).reduce(:+)
+  end
+
 end
 
 class NavTree
@@ -57,7 +65,7 @@ class NavTree
   end
 
   def compile_meta_data(node)
-    total = node.meta_data.map(&:to_i).reduce(:+) 
+    total = node.meta_value
 
     node.children.each do |child|
       total += compile_meta_data(child)
@@ -71,6 +79,29 @@ class NavTree
     compile_meta_data(root)
   end
 
+  def value(node)
+    total = 0 
+    return total if node.nil?
+
+    if node.children?
+      child_idxs = node.meta_data.map{ |idx| idx.to_i - 1 }
+      child_idxs.each do |idx|
+        total += value(node.children[idx])
+      end
+    else 
+      total += node.meta_value
+    end
+
+    total
+  end
+
+  def root_value
+    build_tree
+    value(root)
+  end
+
 end
 
 p NavTree.new('./input.txt').analyze
+
+p NavTree.new('./input.txt').root_value
