@@ -10,74 +10,115 @@ Player = Struct.new(:id, :marbles) do
   end
 end
 
+class Marble 
+
+  attr_accessor :prev, :next
+  attr_reader :value
+
+  def initialize(val)
+    @value = val
+    @prev = self 
+    @next = self
+  end
+  
+end
+
+class MarbleCircle
+
+  attr_accessor :current_marble
+
+  def initialize(marble)
+    @current_marble = Marble.new(marble)
+  end
+
+  def insert(marble)
+    new_marble = Marble.new(marble)
+
+    new_prev = current_marble.next
+    new_next = current_marble.next.next 
+
+    new_prev.next = new_marble 
+    new_next.prev = new_marble 
+
+    new_marble.next = new_next 
+    new_marble.prev = new_prev
+
+    self.current_marble = new_marble
+  end
+
+  def remove(marble)
+    old_prev = marble.prev
+    old_next = marble.next 
+
+    old_prev.next = old_next  
+    old_next.prev = old_prev
+
+    marble.next = nil 
+    marble.prev = nil 
+
+    self.current_marble = old_next 
+    marble
+  end
+
+  def rotate_back
+    # debugger
+    7.times do 
+      self.current_marble = current_marble.prev
+    end
+  end
+  
+end
+
 class MarbleGame
 
   def self.rules(file)
     File.readlines(file)[0].tr('A-z;', '').split(' ').map(&:to_i)
   end
 
-  def self.build_players(num)
-    players_hash = Hash.new { |h, k| h[k] = Player.new(k, [])}
-
-    for i in (1..num)
-      players_hash[i]
-    end 
-
-    players_hash
-  end
-
-  def self.build_marbles(num)
-    @original_marbles ||= (0..num).to_a
-    @original_marbles.dup
-  end
-
-  attr_reader :players, :marbles, :current_marble, :circle
-  attr_writer :marbles, :current_marble, :circle
+  attr_reader :players, :marbles, :circle, :player_count
 
   def initialize(file)
     rules = MarbleGame.rules(file)
-    @players = MarbleGame.build_players(rules[0])
-    @marbles = MarbleGame.build_marbles(rules[1])
-    @current_marble = [next_marble, 0]
-    @circle = [current_marble[0]]
+    @player_count = rules[0]
+    @marbles = rules[1]
+    @circle = MarbleCircle.new(0)
   end 
 
-  def player_ids
-    @player_ids ||= players.keys
+  def players
+    @players ||= Hash.new { |h, k| h[k] = Player.new(k, [])}
   end
 
   def play_turn(id)
-    current_player = players[id]
     result = play_marble(next_marble)
-    current_player.add_marbles(result)
+    players[id].add_marbles(result) if result
   end
 
   def next_marble
-    @marbles.shift
+    @marble += 1
+  end
+
+  def marble
+    @marble ||= 0
   end
 
   def play_marble(marble)
-    new_marbles = []
     if marble % 23 == 0 
-      idx = (current_marble[1] - 7)
-      next_idx = idx < 0 ? circle.length + idx : idx
-      new_marbles += [marble, circle.delete_at(next_idx)]
-      self.current_marble = [circle[next_idx], next_idx]
+      new_marbles = []
+      new_marbles << marble
+      circle.rotate_back
+      new_marbles << circle.remove(circle.current_marble).value
+      return new_marbles
     else
-      next_idx = (current_marble[1] + 2) % circle.length
-      self.circle = circle.take(next_idx) + [marble] + circle.drop(next_idx)
-      self.current_marble = [marble, next_idx]
+      circle.insert(marble)
+      return nil
     end
-
-    new_marbles
   end
 
   def play
     i = 1
-    total_players = player_ids.length
-    until marbles.empty?
+    until marble > marbles
       play_turn(i)
-      i = (i + 1) % total_players
+      i = (i + 1) % player_count
     end
 
     high_score
@@ -90,4 +131,5 @@ class MarbleGame
 end
 
 p MarbleGame.new('./input.txt').play
+p MarbleGame.new('./input2.txt').play
 
